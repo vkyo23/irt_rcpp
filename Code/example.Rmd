@@ -1,16 +1,13 @@
 ---
 title: "Item Response Model from scratch with Rcpp"
 author: "vkyo23"
-date: "`r format(Sys.time(), '%Y/%m/%d')`"  
-output:
-  html_document:
-    toc: TRUE
-    toc_depth: 2  # Numeric
-    toc_float: TRUE # Do you want TOC on the side?
-    code_download: TRUE  # Embed Rmd source code into html? 
-    code_folding: "show"
-    theme: "spacelab"
-    highlight: "tango"  # theme for syntax highlight
+date: \today
+header-includes:
+   - \usepackage{color}
+   - \usepackage{pgf, tikz}
+output: 
+  pdf_document:
+    latex_engine: xelatex 
 ---
 
 <style>
@@ -48,7 +45,7 @@ opts_chunk$set(echo = TRUE,
   message = FALSE,
   warning = FALSE,
   class.source = "foldable")
-opts_knit$set(width=100)
+opts_knit$set(width=60)
 ```
 
 # Preface
@@ -94,7 +91,7 @@ Applying these to the above example, we will derive the posterior distribution o
 
 Then, we can write the conditional posterior distribution for $\alpha, \beta, \theta$ from equation (1) ~ (5), given the rest parameters:
 
-\begin{align}
+\begin{align*}
 \pi(\alpha_j\ |\ y, \beta, \theta)&\propto f(y\ |\ \alpha, \beta, \theta)\pi(\alpha_j)\\
 &= f(y\ |\ \alpha, \beta, \theta) \times N(\alpha_j \ |\ a_0, A_0)\\
 &= \prod\limits_{i=1}^N \left[p_{ij}^{y_{ij}}(1 - p_{ij})^{1-y_{ij}}\right] N(\alpha_j\ |\ a_0, A_0)\ \ \forall j = 1,\dots J.\tag{6}\\
@@ -106,7 +103,7 @@ Then, we can write the conditional posterior distribution for $\alpha, \beta, \t
 \pi(\theta_i\ |\ y, \alpha, \beta)&\propto f(y\ |\ \alpha, \beta, \theta)\pi(\theta_i)\\
 &= f(y\ |\ \alpha, \beta, \theta) \times N(\theta_i \ |\ 0, 1)\\
 &= \prod\limits_{j=1}^J \left[p_{ij}^{y_{ij}}(1 - p_{ij})^{1-y_{ij}}\right] N(\theta_i\ |\ 0, 1)\ \ \forall i = 1,\dots N.\tag{8}
-\end{align}
+\end{align*}
 
 Normally, we would use a Gibbs sampler to sample parameters from the posterior distribution, but since the conditional posteriors in (6) ~ (8) above are not in the form of the standard normal or gamma distributions, we cannot simply sample parameters using a Gibbs sampler. Therefore, we adopt the Metropolis-Hastings Algorithm, which allows us to perform MCMC even in such a case.
 
@@ -126,7 +123,7 @@ where $\pi(\cdot\ |\ y,\eta)$ is the posterior density, $g(\cdot\ |\ \cdot)$ is 
 
 To calculate the acceptance probability, we first calculate the posterior density of the candidate sample, $\pi(\delta_k^*\ |\ y, \eta)$, and the previous sample, $\pi(\delta_k^{(t-1)}\ |\ y,\eta)$, respectively. For example, the case of $\alpha_j$:
 
-\begin{align}
+\begin{align*}
 \text{Candidate}\ \ \dots\ \ \pi(\alpha_j^*\ |\ y, \beta, \theta)&\propto f(y\ |\ \alpha^*, \beta, \theta)\pi(\alpha_j^*)\\
 &= f(y\ |\ \alpha^*, \beta, \theta) \times N(\alpha_j^* \ |\ a_0, A_0)\\
 &= \prod\limits_{i=1}^N \left[p_{ij}(\alpha_j^*)^{y_{ij}}\{1 - p_{ij}(\alpha_j^*)\}^{1-y_{ij}}\right] N(\alpha_j^*\ |\ a_0, A_0)\ \ \forall j = 1,\dots J.\\
@@ -134,7 +131,7 @@ To calculate the acceptance probability, we first calculate the posterior densit
 \text{Previous}\ \ \dots\ \ \pi(\alpha_j^{(t-1)}\ |\ y, \beta, \theta)&\propto f(y\ |\ \alpha^{(t-1)}, \beta, \theta)\pi(\alpha_j^{(t-1)})\\
 &= f(y\ |\ \alpha^{(t-1)}, \beta, \theta) \times N(\alpha_j^{(t-1)} \ |\ a_0, A_0)\\
 &= \prod\limits_{i=1}^N \left[p_{ij}(\alpha_j^{(t-1)})^{y_{ij}}\{1 - p_{ij}(\alpha_j^{(t-1)})\}^{1-y_{ij}}\right] N(\alpha_j^{(t-1)}\ |\ a_0, A_0)\ \ \forall j = 1,\dots J.
-\end{align}
+\end{align*}
 
 Next, we calculate the proposal density $g(\alpha_j^* \ |\ \alpha_j^{(t-1)})$ and $g(\alpha_j^{(t-1)}\ |\ \alpha_j^*)$
 
@@ -155,7 +152,7 @@ and if $\log(u) < \log(ap)$, we accept $\delta_k^*$ otherwise $\delta_k^{(t-1)}$
 
 In this section, I write down the code for parameter sampling. 
 
-## Log-liklihood calculator
+## Log-liklihood calculator `loglik.cpp`
 
 First, I introduce helper function `loglik` which is enable us to calculate log-likelihood. The log-likelihood function is written as
 
@@ -189,7 +186,7 @@ arma::mat loglik(arma::mat Y, arma::vec alpha,
 }
 ```
 
-## Sampling $\alpha_j$
+## Sampling $\alpha_j$ `alpha_sample.cpp`
 
 ```{Rcpp, eval=FALSE}
 // [[Rcpp::depends(RcppArmadillo)]]
@@ -218,8 +215,10 @@ NumericVector alpha_sample(arma::mat Y, arma::vec alpha_old, arma::vec beta_old,
   }
   
   //log-likelihood
-  arma::rowvec loglik_star = colSums(as<NumericMatrix>(wrap(loglik(Y, alpha_star, beta_old, theta_old))), true);
-  arma::rowvec loglik_old = colSums(as<NumericMatrix>(wrap(loglik(Y, alpha_old, beta_old, theta_old))), true);
+  arma::rowvec loglik_star = colSums(as<NumericMatrix>(wrap(loglik(Y, alpha_star, beta_old, theta_old))), 
+                                     true);
+  arma::rowvec loglik_old = colSums(as<NumericMatrix>(wrap(loglik(Y, alpha_old, beta_old, theta_old))), 
+                                    true);
   
   //log prior density
   arma::rowvec log_dnorm_star =  dnorm(as<NumericVector>(wrap(alpha_star)), a0, A0, true);
@@ -235,13 +234,14 @@ NumericVector alpha_sample(arma::mat Y, arma::vec alpha_old, arma::vec beta_old,
   NumericVector log_u = log(runif(J, 0, 1));
   
   //save samples
-  NumericVector sample = ifelse(log_u < log_ap, as<NumericVector>(wrap(alpha_star)), as<NumericVector>(wrap(alpha_old)));
+  NumericVector sample = ifelse(log_u < log_ap, as<NumericVector>(wrap(alpha_star)), 
+                                as<NumericVector>(wrap(alpha_old)));
   
   return(sample);
 }
 ```
 
-## Sampling $\beta_j$
+## Sampling $\beta_j$ `beta_sample.cpp`
 
 ```{Rcpp, eval=FALSE}
 // [[Rcpp::depends(RcppArmadillo)]]
@@ -271,8 +271,10 @@ NumericVector beta_sample(arma::mat Y, arma::vec alpha_old, arma::vec beta_old,
   }
   
   //log-likelihood
-  arma::rowvec loglik_star = colSums(as<NumericMatrix>(wrap(loglik(Y, alpha_old, beta_star, theta_old))), true);
-  arma::rowvec loglik_old = colSums(as<NumericMatrix>(wrap(loglik(Y, alpha_old, beta_old, theta_old))), true);
+  arma::rowvec loglik_star = colSums(as<NumericMatrix>(wrap(loglik(Y, alpha_old, beta_star, theta_old))), 
+                                     true);
+  arma::rowvec loglik_old = colSums(as<NumericMatrix>(wrap(loglik(Y, alpha_old, beta_old, theta_old))), 
+                                    true);
   
   //log prior density
   arma::rowvec log_dnorm_star =  dnorm(as<NumericVector>(wrap(beta_star)), b0, B0, true);
@@ -288,13 +290,14 @@ NumericVector beta_sample(arma::mat Y, arma::vec alpha_old, arma::vec beta_old,
   NumericVector log_u = log(runif(J, 0, 1));
   
   //save samples
-  NumericVector sample = ifelse(log_u < log_ap, as<NumericVector>(wrap(beta_star)), as<NumericVector>(wrap(beta_old)));
+  NumericVector sample = ifelse(log_u < log_ap, as<NumericVector>(wrap(beta_star)), 
+                                as<NumericVector>(wrap(beta_old)));
   
   return(sample);
 }
 ```
 
-## Sampling $\theta_i$
+## Sampling $\theta_i$ `theta_sample.cpp`
 
 ```{Rcpp, eval=FALSE}
 // [[Rcpp::depends(RcppArmadillo)]]
@@ -324,8 +327,10 @@ NumericVector theta_sample(arma::mat Y, arma::vec alpha_old, arma::vec beta_old,
   }
   
   //log-likelihood
-  arma::vec loglik_star = rowSums(as<NumericMatrix>(wrap(loglik(Y, alpha_old, beta_old, theta_star))), true);
-  arma::vec loglik_old = rowSums(as<NumericMatrix>(wrap(loglik(Y, alpha_old, beta_old, theta_old))), true);
+  arma::vec loglik_star = rowSums(as<NumericMatrix>(wrap(loglik(Y, alpha_old, beta_old, theta_star))), 
+                                  true);
+  arma::vec loglik_old = rowSums(as<NumericMatrix>(wrap(loglik(Y, alpha_old, beta_old, theta_old))), 
+                                 true);
   
   //log prior density
   arma::vec log_dnorm_star =  dnorm(as<NumericVector>(wrap(theta_star)), 0, 1, true);
@@ -341,13 +346,14 @@ NumericVector theta_sample(arma::mat Y, arma::vec alpha_old, arma::vec beta_old,
   NumericVector log_u = log(runif(I, 0, 1));
   
   //save samples
-  NumericVector sample = ifelse(log_u < log_ap, as<NumericVector>(wrap(theta_star)), as<NumericVector>(wrap(theta_old)));
+  NumericVector sample = ifelse(log_u < log_ap, as<NumericVector>(wrap(theta_star)), 
+                                as<NumericVector>(wrap(theta_old)));
   
   return(sample);
 }
 ```
 
-## Sampler
+## Sampler `sampler_irt.cpp`
 
 In MCMCpack, reparameterization of estimated parameters is done. Specifically, $\theta_i$ is standardized with mean 0 and sd 1, and $\alpha_j, \beta_j$ are alsop adjusted accordingly. Specifically, this is.
 
@@ -494,8 +500,10 @@ irt_cpp <- function(datamatrix, iter = 2000, warmup = 1000, thin = 1, refresh = 
   cat("  Observations:", nrow(datamatrix) * ncol(datamatrix),"\n")
   cat("    Number of individuals:", nrow(datamatrix), "\n")
   cat("    Number of items:", ncol(datamatrix), "\n")
-  cat("    Total correct response:", sum(as.numeric(datamatrix), na.rm = TRUE), "/", nrow(datamatrix) * ncol(datamatrix), 
-      "[", round(sum(as.numeric(datamatrix), na.rm = TRUE) / (nrow(datamatrix) * ncol(datamatrix)), 2) * 100, "%]","\n\n")
+  cat("    Total correct response:", sum(as.numeric(datamatrix), na.rm = TRUE), "/", 
+      nrow(datamatrix) * ncol(datamatrix), 
+      "[", round(sum(as.numeric(datamatrix), na.rm = TRUE) / (nrow(datamatrix) * 
+                                                                ncol(datamatrix)), 2) * 100, "%]","\n\n")
   cat("  Priors: \n")
   cat("    alpha ~", paste0("N(", prior$a0, ", ", prior$A0, "),"), 
       "beta ~", paste0("N(", prior$b0, ", ", prior$B0, "),"), 
@@ -675,7 +683,7 @@ fit_mcmc <- MCMCpack::MCMCirt1d(Y,
 proc.time()[3] - stime
 ```
 
-Very unfortunately, it is many times faster to do IRT with MCMCpack. Also, it seems that MCMCpack uses probit execution instead of logit. I don't know if that affects the execution time, but it does seem very fast. Let's check the result.
+Very unfortunately, it is much faster to do IRT with MCMCpack. Also, it seems that MCMCpack uses probit execution instead of logit. I don't know if that affects the execution time, but it does seem very fast. Let's check the result.
 
 ```{r}
 theta_mcmc <- summary(fit_mcmc)$quantiles
