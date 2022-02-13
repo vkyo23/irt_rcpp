@@ -1,10 +1,32 @@
 library(Rcpp)
-# Compile .cpp funcitons
-sourceCpp("cpp/sampler_irt.cpp")
+# Compile .cpp functions
+sourceCpp("cpp/arma/sampler_irt.cpp")
 
-# Define irt function
+# Define wrapper function
 irt_cpp <- function(datamatrix, iter = 2000, warmup = 1000, thin = 1, refresh = 100, 
                     seed, init, tuning_par, prior) {
+  
+  # datamatrix -> individual * item matrix (matrix)
+  # iter -> # of iterations (int)
+  # warmup -> # of burn-in (int)
+  # thin -> Save sample every [thin] iteration (int)
+  # refresh -> Output the status of sampling every [refresh] iteration (int)
+  # seed -> seed value (double)
+  # init -> initial values (list, please name correctly as below!)
+  #         -> alpha: init for alpha
+  #         -> beta: init for beta
+  #         -> theta: init for theta
+  # tuning_par -> tuning parameter (list, please name correctly as below!)
+  #               -> alpha: tau for alpha
+  #               -> beta: tau for beta
+  #               -> theta: tau for theta
+  # 
+  # prior -> priors (list, please name correctly as below!)
+  #         -> a0: prior means for alpha
+  #         -> A0: prior sd for alpha
+  #         -> b0: prior means for beta
+  #         -> B0: prior sd for beta
+  
   cat("\n================================================================\n")
   cat("Run Metropolis-Hasting Sampler for 2PL item response model...\n\n")
   cat("  Observations:", nrow(datamatrix) * ncol(datamatrix),"\n")
