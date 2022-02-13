@@ -1,5 +1,5 @@
 // [[Rcpp::depends(RcppArmadillo)]]
-#include <RcppArmadillo.h>
+#include <RcppArmadillo.h> 
 #include "alpha_sample.h"
 #include "beta_sample.h"
 #include "theta_sample.h"
