@@ -1,6 +1,6 @@
 library(Rcpp)
 # Compile .cpp functions
-sourceCpp("cpp/arma/sampler_irt.cpp")
+sourceCpp("../cpp/arma/sampler_irt.cpp")
 
 # Define wrapper function
 irt_cpp <- function(datamatrix, iter = 2000, warmup = 1000, thin = 1, refresh = 100, 
