@@ -5,9 +5,14 @@ date: \today
 header-includes:
    - \usepackage{color}
    - \usepackage{pgf, tikz}
+   - \usepackage{color}
 output: 
   pdf_document:
+    toc: TRUE
+    number_sections: TRUE
     latex_engine: xelatex 
+knit: (function(inputFile, encoding) {
+  rmarkdown::render(inputFile, encoding = encoding, output_dir = "../") })
 ---
 
 <style>
@@ -56,7 +61,7 @@ In this RMarkdown file, I will describe the model and show an example of analysi
 
 [^1]: The description and implementation of model is relied on *Handbook of Item Response Theory Volume 2: Statistical Tools* by Wim J. van der Linden (2016). https://www.routledge.com/Handbook-of-Item-Response-Theory-Volume-2-Statistical-Tools/Linden/p/book/9780367221041
 
-**<span style="color:red">IMPORTANT NOTE</span>: ** As this is a transcription by a student who is still studying IRT for his own notes, there will be errors in various parts. Please let me know if there are any mistakes.
+**\textcolor{red}{IMPORTANT NOTE}: ** As this is a transcription by a student who is still studying IRT for his own notes, there will be errors in various parts. Please let me know if there are any mistakes.
 
 # Likelihood and posteriors
 
@@ -64,18 +69,16 @@ Suppose there are $i=1,\dots,N$ individuals and $j=1,\dots,J$ items (or exams). 
 
 \[p_{ij} = \text{Pr}(y_{ij}=1\ |\ \alpha_j, \beta_j, \theta_i)=\text{logit}^{-1}(\beta_j\theta_i-\alpha_j).\]
 
-where $alpha_j$, $\beta_j$ is the **difficulty** and **discrimination** of an item $j$, and $\theta_i$ is the ability of $i$. It is straightforward to show the likelihood $f$:
+where $\alpha_j$, $\beta_j$ is the **difficulty** and **discrimination** of an item $j$, and $\theta_i$ is the ability of $i$. It is straightforward to show the likelihood $f$:
 
-\begin{equation}
-\tag{1}
+\begin{equation}\label{eq:lik}
 f(y\ |\ \alpha, \beta, \theta) = \prod\limits_{i=1}^N\prod\limits_{j=1}^J p_{ij}^{y_{ij}} (1 - p_{ij})^{1-y_{ij}}.
 \end{equation}
 
 
 For the above generative model, Bayesian estimation is used to estimate the latent variables, the parameters $\alpha_j$, $\beta_j$ and $\theta_i$. From the Bayes rule, we can write the posterior distribution as
 
-\begin{equation}
-\tag{2}
+\begin{equation}\label{eq:post}
 \pi(\Theta\ |\ y) \propto f(y\ |\ \Theta)\pi(\Theta),
 \end{equation}
 
@@ -84,12 +87,12 @@ where $\pi(\Theta)$ is **prior distribution**, $f(y\ |\ \Theta)$ is likelihood f
 Applying these to the above example, we will derive the posterior distribution of the item response theory model. First, we set prior distributions for $\alpha, \beta, \theta$
 
 \begin{align}
-\alpha_j &\sim N(a_0, A_0)\tag{3}\\
-\beta_j &\sim N(b_0, B_0)\tag{4}\\
-\theta_i &\sim N(0, 1)\tag{5}.
+\alpha_j &\sim N(a_0, A_0)\label{eq:pr_a}\\
+\beta_j &\sim N(b_0, B_0)\label{eq:pr_b}\\
+\theta_i &\sim N(0, 1)\label{eq:pr_t}.
 \end{align}
 
-Then, we can write the conditional posterior distribution for $\alpha, \beta, \theta$ from equation (1) ~ (5), given the rest parameters:
+Then, we can write the conditional posterior distribution for $\alpha, \beta, \theta$ from equation (\ref{eq:lik}) ~ (\ref{eq:pr_t}), given the rest parameters:
 
 \begin{align*}
 \pi(\alpha_j\ |\ y, \beta, \theta)&\propto f(y\ |\ \alpha, \beta, \theta)\pi(\alpha_j)\\
@@ -105,7 +108,7 @@ Then, we can write the conditional posterior distribution for $\alpha, \beta, \t
 &= \prod\limits_{j=1}^J \left[p_{ij}^{y_{ij}}(1 - p_{ij})^{1-y_{ij}}\right] N(\theta_i\ |\ 0, 1)\ \ \forall i = 1,\dots N.\tag{8}
 \end{align*}
 
-Normally, we would use a Gibbs sampler to sample parameters from the posterior distribution, but since the conditional posteriors in (6) ~ (8) above are not in the form of the standard normal or gamma distributions, we cannot simply sample parameters using a Gibbs sampler. Therefore, we adopt the Metropolis-Hastings Algorithm, which allows us to perform MCMC even in such a case.
+Normally, we would use a Gibbs sampler to sample parameters from the posterior distribution, but since the conditional posteriors in (6) ~ (8) above are not in the form of the standard distributions, such as normal and gamma distributions, we cannot simply sample parameters using a Gibbs sampler. Therefore, we adopt the Metropolis-Hastings Algorithm, which allows us to perform MCMC even in such a case.
 
 # Metropolis-Hastings Algorithm
 
@@ -710,7 +713,6 @@ theta_mcmc %>%
 
 The sign of $\theta_i$ is reversed, but both estimates are similar! 
 
-**So, my sampler works well**!!!!!!!!!
 
 [^3]: See more detail:
 https://cran.r-project.org/web/packages/MCMCpack/MCMCpack.pdf
