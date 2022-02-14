@@ -1,3 +1,3 @@
 # irt_rcpp
--- Implementing 2PL item response model with Rcpp (but this is just a note)
+Implementing Bayesian 2PL item response model from scratch with Rcpp (but this is just a note)
 
