@@ -589,7 +589,7 @@ First, load {Rcpp} package, compile `sampler_irt.cpp` and data.
 
 ```{r}
 library(Rcpp)
-sourceCpp("cpp/sampler_irt.cpp")
+sourceCpp("../cpp/sampler_irt.cpp")
 data(Senate, package = "MCMCpack")
 ```
 
